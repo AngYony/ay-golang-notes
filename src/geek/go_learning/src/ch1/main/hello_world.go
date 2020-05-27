@@ -12,4 +12,4 @@ func main(){
 	fmt.Println(os.Args)
 	
 	os.Exit(0)
-}
+} 
