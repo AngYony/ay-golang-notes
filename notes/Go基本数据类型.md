@@ -2,6 +2,26 @@
 
 [TOC]
 
+## 查看数据类型
+
+可以通过将任何值传递给reflect包的TypeOf函数，来查看它们的类型。
+
+```go
+package main
+import (
+	"fmt"
+	"reflect"
+)
+
+func main(){
+	fmt.Println(reflect.TypeOf(42))
+	fmt.Println(reflect.TypeOf(true))
+	fmt.Println(reflect.TypeOf("hello ,Go!"))
+}
+```
+
+
+
 ## 数值类型（number）
 
 Go的数值类型包括：
