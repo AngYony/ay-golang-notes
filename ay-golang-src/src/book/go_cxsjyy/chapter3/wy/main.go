@@ -49,4 +49,9 @@ func main() {
 
 	fmt.Print(1<<4)
 
+
+
+
+
+
 }

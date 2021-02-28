@@ -14,6 +14,8 @@
 
 3、文件名不一定是main.go
 
+4、go的package包名可以和目录名不同
+
 ## 退出返回值
 
 与其他主要编程语言的差异：
@@ -73,8 +75,47 @@ hello world wang
 
 
 
+## 变量、常量
+
+变量：
+
+赋值可以进行自动类型推断
+
+在一个赋值语句中可以对多个变量进行同时赋值
+
+常量：
+
+可以快速设置连续值
+
+```go
+const (
+		Monday = iota + 1
+		Tuesday
+		Wednesday
+	)
+
+	const (
+		Open = 1 << iota
+		Close
+		Pending
+	)
+```
+
+
+
+
+
+
+
+
+
 ## 编写测试程序
 
 1、源码文件以_test结尾：xxx_test.go
 
 2、测试方法名以Test开头：func TestXXX(t * testing.T){...}
+
+（大写的方法名，意味着包外可以访问）
+
+
+

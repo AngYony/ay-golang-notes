@@ -13,4 +13,5 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
-/ay-golang-src/hanru/bin
+/ay-golang-src/bin
+/ay-golang-src/pkg
