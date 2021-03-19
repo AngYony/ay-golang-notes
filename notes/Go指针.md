@@ -190,14 +190,6 @@ var myBool bool = true
 printPointer(&myBool) //向函数传递一个指针
 ```
 
-综合示例：
-
-```
-
-```
-
-
-
 
 
 ## 总结
