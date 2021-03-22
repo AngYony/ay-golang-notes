@@ -2,6 +2,62 @@
 
 [TOC]
 
+## 类型声明
+
+type声明定义了一个新的命名类型，它和某个已有类型使用同样的底层类型。
+
+命名类型的主要作用就是与底层类型的使用相互隔离，避免相互混乱使用。
+
+即使两个命名类型使用了相同的底层类型，它们也不是相同的类型，仍然是不同的类型，所以它们不能使用算术表达式进行比较和合并。
+
+命名类型的声明：
+
+```
+type name underlying-type
+```
+
+类型的声明通常出现在包级别，这里命名的类型在整个包中可见，如果名字是导出的（开头使用大写字母），其他的包也可以访问它。
+
+命名类型的底层类型决定了它的结构和表达方式，以及它支持的内部操作集合，这些内部操作与直接使用底层类型的情况相同。
+
+```go
+package main
+
+//定义两个类型
+type Celsius float64
+type Fahrenheit float64
+
+const (
+	AbsoluteZeroC Celsius = -273.15
+	FreezingC     Celsius = 0
+	boilingC      Celsius = 100
+)
+
+func CToF(c Celsius) Fahrenheit {
+	return Fahrenheit(c*9/5 + 32)
+}
+func FToC(f Fahrenheit) Celsius {
+	return Celsius((f - 32) * 5 / 9)
+}
+func main() {
+	//fmt.Println(Celsius(2.0) == Fahrenheit(2.0)) //编译错误
+	fmt.Println(Celsius(2.0) == Celsius(Fahrenheit(2.0))) //输出true
+    fmt.Println(float64(Celsius(2.0)) == float64(Fahrenheit(2.0))) //输出true
+}
+```
+
+在上述代码中，即使Celsius和Fahrenheit都使用了相同的底层类型float64，它们也不是相同的类型，所以不能使用算术表达式进行比较和合并。要想解决这个问题，必须显式的进行类型转换。
+
+对于每个类型T，都有一个对应的类型转换操作T(x)将值x转换为类型T。
+
+如果两个类型具有相同的底层类型，或二者都是指向相同底层类型变量的未命名指针类型，则二者是可以相互转换的。
+
+类型转换不改变类型值的表达方式，仅改变类型。
+
+命令类型一般通常用于底层类型是复杂结构体类型，可以避免一遍遍地重复写复杂的类型。
+
+
+
 ## 查看数据类型
 
 可以通过将任何值传递给reflect包的TypeOf函数，来查看它们的类型。
