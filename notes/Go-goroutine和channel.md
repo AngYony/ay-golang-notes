@@ -148,6 +148,26 @@ func main() {
 
 
 
+### 有缓冲的channel
+
+在创建channel时，可以通过给make传递第二个参数来创建有缓冲的channel，该参数包含channel应该能够在其缓冲区中保存的值的数量。
+
+```go
+channel := make(chan string,3)
+```
+
+有缓冲的channel可以在导致发送的goroutine阻塞之前保存一定数量的值。在适当的情况下，这可以提高程序的性能。
+
+当goroutine通过channel发送一个值时，该值被添加到缓冲区中。发送的goroutine将继续运行，而不被阻塞。
+
+==发送的goroutine可以继续在channel上发送值，直到缓冲区被填满；只有这时，额外的发送操作才会导致goroutine阻塞。==
+
+当另一个goroutine从channel接收一个值时，它从缓冲区中提取最早添加的值。
+
+额外的接收操作将继续清空缓冲区，而额外的发送操作将填充缓冲区。
+
+
+
 ## goroutine 与 channel 之间的同步
 
 channel可以确保发送的goroutine 在接收channel尝试使用该值之前已经发送了该值。
