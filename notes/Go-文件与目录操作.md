@@ -1,8 +1,54 @@
-# Go文件与目录操作
+# Go-文件与目录操作
+
+文件与目录的操作需要引入os包。
 
 
 
 ## 文件操作
+
+### os.OpenFile()
+
+该函数具有三个参数。第一个参数是一个字符串文件名；第二个参数是文件的操作选项，一个int“标志”；第三个参数表示要设置的文件的权限。
+
+该函数的定义源码如下：
+
+```go
+func OpenFile(name string, flag int, perm FileMode) (*File, error) {
+	...
+}
+```
+
+该函数的调用示例代码：
+
+```go
+options := os.O_WRONLY | os.O_APPEND | os.O_CREATE
+file, err := os.OpenFile("wy.txt", options, os.FileMode(0600))
+```
+
+第二个参数是由几个标志常量按照位操作计算得到的。
+
+```go
+const (
+	// Exactly one of O_RDONLY, O_WRONLY, or O_RDWR must be specified.
+	O_RDONLY int = syscall.O_RDONLY // open the file read-only.
+	O_WRONLY int = syscall.O_WRONLY // open the file write-only.
+	O_RDWR   int = syscall.O_RDWR   // open the file read-write.
+	// The remaining values may be or'ed in to control behavior.
+	O_APPEND int = syscall.O_APPEND // append data to the file when writing.
+	O_CREATE int = syscall.O_CREAT  // create a new file if none exists.
+	O_EXCL   int = syscall.O_EXCL   // used with O_CREATE, file must not exist.
+	O_SYNC   int = syscall.O_SYNC   // open for synchronous I/O.
+	O_TRUNC  int = syscall.O_TRUNC  // truncate regular writable file when opened.
+)
+```
+
+第三个参数FileMode类型表示文件权限，其格式与你在Unix的ls命令中看到的格式类似。
+
+```go
+fmt.Println(os.FileMode(0700)) //输出：-rwx------
+```
+
+
 
 ### 读取文件内容
 

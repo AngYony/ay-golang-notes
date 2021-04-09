@@ -52,7 +52,7 @@ func main() {
 	var robot Robat = noiseMaker.(Robat)
 	robot.Walk()
 
-	wy, ok := noiseMaker.(Robat)
+	var wy, ok = noiseMaker.(Robat)
 	if ok {
 		wy.Walk()
 	} else {

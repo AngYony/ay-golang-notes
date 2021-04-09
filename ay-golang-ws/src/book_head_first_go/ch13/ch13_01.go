@@ -31,8 +31,12 @@ func main() {
 	go responseSize("https://www.baidu.com/")
 	time.Sleep(5 * time.Second)
 
-	var myChannel chan float64
-	myChannel = make(chan float64)
+	// var myChannel chan float64
+	// myChannel = make(chan float64)
 
-	myChannel2 := make(chan float64)
+	// myChannel := make(chan float64)
+	// myChannel<-3.14
+
+	// <- myChannel
+
 }
