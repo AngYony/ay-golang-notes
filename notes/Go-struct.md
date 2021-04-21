@@ -1,4 +1,4 @@
-# Go类型-struct
+# Go-struct
 
 类似于C#中的结构或类。
 
@@ -204,6 +204,32 @@ func main() {
 	fmt.Println(myCar)
 }
 ```
+
+
+
+## 别名类型
+
+### 别名类型
+
+别名类型与其源类型的区别恐怕只是在名称上，它们是完全相同的。
+
+声明MyString是string类型的别名类型：
+
+```go
+type MyString = string
+```
+
+Go 语言内建的基本类型中就存在两个别名类型。byte是uint8的别名类型，而rune是int32的别名类型。
+
+注意，如果是下述的这样声明：
+
+```go
+type MyString2 string  //注意：这里没有等号
+```
+
+MyString2和string就是两个不同的类型了。这里的MyString2是一个新的类型，不同于其他任何类型。
+
+这种方式也可以被叫做对类型的再定义。对于这里的类型再定义来说，string可以被称为MyString2的潜在类型。潜在类型的含义是，某个类型在本质上是哪个类型。
 
 
 
