@@ -101,6 +101,56 @@ fmt.Println(string(utf8Partial))  //输出：人
 
 ### UTF-8
 
+UTF-8是一种高效的可变长度的编码方式，它可以用8个、16个或者32个二进制位为单个代码点编码。在可变长度编码方式的基础上，UTF-8沿用了ASCII字符的编码，从而使得ASCII字符可以直接转换为相应的UTF-8编码字符。
+
+ utf8 包提供了两个函数，其中 RuneCountInString 函数能够以符文而不是以字节为单位返回字符串的长度，而 DecodeRuneInString 函数则能够解码字符串的首个字符并返回解码后的符文占用的字节数量。 
+
+```go
+zg := "中国"
+fmt.Println("字节长度：", len(zg))                    //输出：6
+fmt.Println("字符长度：", utf8.RuneCountInString(zg)) //输出：2
+c, size := utf8.DecodeRuneInString(zg)
+fmt.Printf("第一个字符：%c，其字节数为：%v", c, size) //输出：中和3
+```
+
+Go语言提供的关键字range不仅可以迭代元素，而且可以直接解码utf-8编码的字符串。
+
+```go
+for i, c := range zg {
+    //变量c被赋值为该索引上的代码点（rune）
+	fmt.Printf("%v %c\n", i, c) 
+}
+```
+
+
+
+
+
+## rune 和 byte
+
+统一码联盟（Unicode Consortium）把名为代码点的一系列数值赋值给了上百万个独一无二的字符。例如，大写字母A的代码点为65，而笑脸表情<img src="https://cdn.ptpress.cn/pubcloud/5B0A982E/ushu/UBb60129159591/online/FBOLb64082fe01ed/Images/31.png" style="width: 2%" width="2%">的代码点则为128515。
+
+Go语言提供了rune（符文）类型用于表示单个统一码代码点，该类型是int32类型的别名。
+
+Go语言还提供了uint8类型的别名byte，这种类型既可以表示二进制数据，又可以表示ASCII定义的英文字符。（ASCII包含128个字符，它是统一码的子集）
+
+```go
+A1 := 'A'
+var B rune = 'B'
+//获取单个字符的代码点
+fmt.Printf("%T %[1]d  \n", A1) //输出：int32 65
+fmt.Printf("%T \n", B)         //输出：int32，因为rune是int32类型的别名
+//根据代码点创建变量
+var A2 rune = 65
+var pi rune = 960 //π的代码点
+//获取对应表示的字符
+fmt.Printf("%c %c", A2, pi) //输出：A π
+```
+
+
+
+
+
 
 
 ## 其他类型与字符串类型之间的相互转换
@@ -140,3 +190,51 @@ string([]rune{'世','界'})
 【关于字符串与字节数组和rune数组之间转换的内存影响，见《Go高级编程》的1.3字符串部分】
 
 todo: Head Frist Go语言程序设计，附录B中的“更多关于符文的信息部分”
+
+### rune <=> string
+
+rune转字符串：
+
+```go
+var pi rune = 'π'
+//不进行转换，将会按照int32类型输出值
+fmt.Println(pi) //输出：960
+//转换为字符串
+fmt.Println(string(pi)) //输出：π
+```
+
+string转rune：
+
+go不允许将string转换成单个rune，必须将string转换成[]rune。
+
+### int <=> string
+
+将一个整数转换为其对应的字符串的值，例如11转换为“11”。
+
+```go
+countdown := 65
+//输出该代码点表示的字符
+fmt.Printf("%c \n", countdown) //输出：A
+//将整数转换为ASCII字符
+str := strconv.Itoa(countdown) //输出：65
+fmt.Println(str)
+//将数值转换为字符串
+str = fmt.Sprintf("%v", countdown) //输出：65
+fmt.Println(str)
+```
+
+将数值字符串转换为数值：
+
+```go
+//将ASCII字符转换为整数
+c, err := strconv.Atoi("10")
+if err != nil {
+	fmt.Println("转换错误")
+}
+fmt.Println(c) //输出：10
+```
+
+### bool <=> string（不支持相互转换）
+
+在Go语言中，布尔值并没有与之相等的数字值或者字符串值，因此尝试使用<code>string(false)</code>、<code>int(false)</code>这样的方法来转换布尔值，或者尝试使用<code>bool(1)</code>、<code>bool("yes")</code>等方法来获取布尔值，Go编译器都会报告错误。
+
