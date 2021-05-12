@@ -16,7 +16,4 @@ func main() {
 		fmt.Printf("%c", c)
 	}
 
-	zg := "中国"
-	fmt.Println(len(zg))
-
 }

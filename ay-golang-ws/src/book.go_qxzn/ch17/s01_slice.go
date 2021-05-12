@@ -14,9 +14,4 @@ func main() {
 	s := zg[:3]
 	fmt.Println(s) //输出：中
 
-	var ans float64 = 15 + 25/5.2
-	const age = 20
-	const m = 12.3
-	fmt.Println(age / m)
-	fmt.Println(ans)
 }
