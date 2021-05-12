@@ -1,6 +1,6 @@
 # Go-struct
 
-类似于C#中的结构或类。
+类似于C#中的结构或类。但Go中的struct是值类型。
 
 通常自定义的struct类型，都放在一个独立的包中，并且名称首字母大写（导出的），这样做，可以避免自定义类型名和其他变量名冲突。
 
@@ -15,6 +15,8 @@ var myStruct struct {
 	toggle bool
 }
 fmt.Printf("%#v", myStruct)
+//如果要同时打印字段名称，使用%+v
+fmt.Printf("%+v", myStruct)
 ```
 
 方式二（推荐）：通过type关键字定义一个struct类型。
@@ -83,7 +85,24 @@ func main() {
 }
 ```
 
+## 使用指针实现按引用传值
+
 注意：Go是一个按值传递的语言，意味着函数调用时接收的是一个参数的拷贝。如果函数修改了参数值，它修改的只是拷贝，而不是原始值。
+
+```go
+func main() {
+	type wy struct {
+		h int
+		w int
+	}
+
+	a := wy{1, 2}
+	b := a
+	b.h += 5
+	fmt.Println(b) //输出：{6 2}
+	fmt.Println(a) //输出：{1 2}
+}
+```
 
 如要要按照引用类型传递值，需要借助指针来代替形参。
 
@@ -169,7 +188,7 @@ func main() {
 }
 ```
 
-### 自定义类型
+## 自定义类型
 
 在Go语言中，既可以使用struct作为基础类型来定义类型，也可以基于int、string、bool或者其他任何类型来定义类型。
 
@@ -190,7 +209,7 @@ func main() {
 
 定义类型不能用来与不同类型的值一起运算，即使它们是来自相同的基础类型。
 
-### struct字面量
+## struct字面量
 
 ```go
 type car struct {
@@ -203,6 +222,22 @@ func main() {
 	myCar := car{name: "hi", topSpeed: 20}
 	fmt.Println(myCar)
 }
+```
+
+## 由struct组成的切片
+
+```go
+type wy struct {
+	h int
+	w int
+}
+
+a := []wy{
+	{h: 3, w: 1},
+	{h: 2, w: 3},
+	{h: 4, w: 5}, //末尾必须有逗号
+}
+fmt.Println(a)
 ```
 
 
@@ -293,6 +328,8 @@ Go语言不支持方法重载。在同一个包中定义多个同名的函数不
 方法名称以大写字母开头，则认为是导出的，如果它的名称以小写字母开头，则认为是不导出的。
 
 就像其他的参数一样，接收器参数接收一个原值的拷贝。如果你的方法需要修改接收器，你应该在接收器参数上使用指针类型，并且修改指针指向的值。
+
+Go语言没有为构造函数提供特殊的语言特性，构造函数和其他函数一样只是普通的函数。
 
 ### 自定义方法
 
@@ -396,6 +433,44 @@ func main() {
 ```go
 Number(4).PointerDouble()
 ```
+
+
+
+## struct 与 JSON ，结构标签（tag）
+
+Go语言的json包要求结构中的字段必须以大写字母开头，并且包含多个单词的字段名称必须使用驼峰形命名惯例。如果需要让JSON数据使用其他格式形态，可以对结构中的字段打标签（tag），使json包在编码数据的时候能够按照我们的意愿修改字段的名称。
+
+```go
+func main() {
+	type location struct {
+		Lat, Long float64 //字段必须以大写字母开头
+		Msg       string  `json:"message"`
+	}
+
+	curiosity := location{-4.5, 11.45, "你好"}
+
+	//Marshal函数只对结构中被导出的字段实施编码
+	bytes, err := json.Marshal(curiosity)
+	if err != nil {
+		os.Exit(1)
+	}
+
+	str := string(bytes)
+	fmt.Println(str)
+}
+```
+
+输出结果：
+
+```
+{"Lat":-4.5,"Long":11.45,"message":"你好"}
+```
+
+结构标签实际上就是一段与结构字段相关联的字符串。这里之所以使用被<code>``</code>包围的原始字符串字面量而不使用被<code>""</code>包围的普通字符串字面量，只是为了省下一些使用反斜杠转义引号的功夫而已。具体来说，如果我们把上例中的结构标签从原始字符串字面量改成普通字符串字面量，那么就需要把它改写成更难读也更麻烦的<code>"json:\"latitude\""</code>才行。
+
+结构标签的格式为<code>key:"value"</code>，其中键的名称通常是某个包的名称。例如，为了定制<code>Lat</code>字段在JSON编码和XML编码时的输出，我们可以将该字段的结构标签设置成<code>`json:"latitude"xml:"latitude"`</code>。
+
+
 
 
 
