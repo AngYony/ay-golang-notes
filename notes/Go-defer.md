@@ -34,3 +34,4 @@ func main() {
 
 注意：如果一个函数有return语句，那么defer关键字必须出现在return语句之前，才能确保函数调用发生。同时defer只能延迟函数和方法调用，不能延迟其他语句。
 
+<code>defer</code>语句在函数包含多个<code>return</code>语句时特别有用。
