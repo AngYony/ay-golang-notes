@@ -132,6 +132,12 @@ func main() {
 
 
 
+### channel 与 nil
+
+见channel笔记。
+
+
+
 ## 零值
 
 各类型对应的零值如下表所示：
@@ -147,4 +153,5 @@ func main() {
 | map       | nil   |                             |
 | interface | nil   |                             |
 | func      | nil   | 函数类型的变量的零值为nil   |
+|           | nil   |                             |
 
