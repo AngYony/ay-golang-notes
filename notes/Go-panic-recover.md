@@ -76,6 +76,27 @@ recover函数返回最初传递给panic函数的任何值。
 
 不能直接对recover函数使用defer关键字，可以在一个单独的函数中放置一个recover调用，并在引发panic的代码之前使用defer调用该函数。
 
+示例一：
+
+```go
+func main() {
+	defer func() {
+		//从惊恐中恢复
+		if e := recover(); e != nil {
+			fmt.Println(e) //输出：你好吗？
+		}
+	}()
+
+	panic("你好吗？") //引发惊恐
+}
+```
+
+被延迟的操作将在函数返回之前执行，即使在发生惊恐的情况下也是如此。如果某个被延迟的函数调用了<code>recover</code>，那么惊恐将会停止，而程序则会继续运行。这种恢复机制类似于其他语言中的<code>catch</code>、<code>except</code>和<code>rescue</code>。
+
+
+
+示例二：
+
 ```go
 func calmDown() {
     //recover返回传递给panic的任何值
