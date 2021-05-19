@@ -348,13 +348,29 @@ math.NaN 函数则返回非数值（NaN）。
 
 ### 复数
 
-Go具备两种大小的复数：complex64和complex128，二者分别由float32和float64构成。
+Go具备两种大小的复数：complex64和complex128，二者分别由float32（实部和虚部）和float64（实部和虚部）构成。
 
 通过内置的complex函数，根据给定的实部和虚部创建复数。
 
 提取复数的实部时，使用内置的real函数；提取复数的虚部时，使用内置的imag函数。
 
 如果在浮点数或十进制数后面紧接着写字母i，如3.12i或2i，它就变成了一个虚数。
+
+```go
+func main() {
+	c := 3 + 4i
+	fmt.Printf("%v  %[1]T \n", c) //输出：(3+4i)  complex128
+	//计算绝对值
+	fmt.Println(cmplx.Abs(c)) //输出：5
+	//直接使用i会提示变量未定义，因此使用1i代替i。
+	var c2 = cmplx.Pow(math.E, 1i*math.Pi) + 1
+	//也可以使用下述语句来简化写法
+	c3 := cmplx.Exp(1i * math.Pi) //表示E的多少次方
+	fmt.Println(c2, c3)           //输出的结果相同
+}
+```
+
+
 
 
 
