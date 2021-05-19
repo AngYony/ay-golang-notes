@@ -130,7 +130,7 @@ for i, c := range zg {
 
 统一码联盟（Unicode Consortium）把名为代码点的一系列数值赋值给了上百万个独一无二的字符。例如，大写字母A的代码点为65，而笑脸表情<img src="https://cdn.ptpress.cn/pubcloud/5B0A982E/ushu/UBb60129159591/online/FBOLb64082fe01ed/Images/31.png" style="width: 2%" width="2%">的代码点则为128515。
 
-Go语言提供了rune（符文）类型用于表示单个统一码代码点，该类型是int32类型的别名。
+Go语言提供了rune（符文）类型用于表示单个统一码代码点，该类型是int32类型的别名。rune相当于go的char。
 
 Go语言还提供了uint8类型的别名byte，这种类型既可以表示二进制数据，又可以表示ASCII定义的英文字符。（ASCII包含128个字符，它是统一码的子集）
 
@@ -147,9 +147,60 @@ var pi rune = 960 //π的代码点
 fmt.Printf("%c %c", A2, pi) //输出：A π
 ```
 
+代码点值对应rune和int32类型（相当于char）。
 
+综合示例：
 
+```go
+func main() {
+	s := "abc中国"
+	fmt.Println("按照rune(int32)输出：")
+	for _, c := range s {
+		//按照int32输出结果
+		fmt.Printf("%v ", c)
+	}
+	fmt.Println()
 
+	//将字符串转换为字节数组，并打印每个字节的值
+	fmt.Println("按照byte(uint8)类型输出：")
+	for _, b := range []byte(s) {
+		//按照uint8输出
+		fmt.Printf("%v ", b)
+	}
+	fmt.Println()
+	fmt.Println("按照十六进制输出:")
+	for _, x := range []byte(s) {
+		//按照十六进制输出
+		fmt.Printf("%X ", x)
+	}
+	fmt.Println()
+	fmt.Println("输出rune对应的字符：")
+	//输出字符
+	for _, r := range s {
+		fmt.Printf("%c", r)
+	}
+}
+```
+
+输出内容：
+
+```
+按照rune(int32)输出：
+97 98 99 20013 22269 
+按照byte(uint8)类型输出：
+97 98 99 228 184 173 229 155 189 
+按照十六进制输出:
+61 62 63 E4 B8 AD E5 9B BD 
+输出rune对应的字符：
+abc中国
+```
+
+使用`utf8.RuneCountInString`获取字符数量：
+
+```go
+zg := "中国"
+fmt.Println(utf8.RuneCountInString(zg)) //输出：2
+```
 
 
 
