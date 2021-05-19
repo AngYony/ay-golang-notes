@@ -40,6 +40,24 @@ fmt.Printf("%v", a)		//输出：[1 2 3]
 
 ### %q
 
+会包含双引号的输出。
+
+```go
+wy := "abc"
+fmt.Printf("%v  \n", wy) //输出：abc
+fmt.Printf("%q", wy)     //输出："abc"
+```
+
+### %s
+
+输出字符串
+
+```go
+s := "中国"
+fmt.Printf("%s \n", s)      //输出：中国
+fmt.Printf("%s", []byte(s)) //输出：中国
+```
+
 
 
 
@@ -81,6 +99,8 @@ fmt.Printf("%d %[1]x %#[1]x %#[1]X ", x) // 输出：3735928559 deadbeef 0xdeadb
 谓词%后的[1]告知Printf重复使用第一个操作数；%后的#告知Printf输出相应的前缀0（八进制）、0x或0X（十六进制）。除了十进制外，为了能够标准的输出对应进制位的值，建议始终使用#。
 
 ### %c
+
+输出字符值。
 
 ```go
 var A rune = 65
