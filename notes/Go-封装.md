@@ -1,4 +1,4 @@
-# Go封装
+# Go - 封装
 
 将程序中的数据隐藏在一部分代码中而对另一部分不可见的方法称为封装。在Go中使用未导出的变量、struct字段、函数或者方法，把数据封装在包中。
 
@@ -15,6 +15,78 @@ Go开发者通常在需要的时候才使用封装，比如字段数据需要被
 
 
 ## 封装操作
+
+### 可见性
+
+每一个包给它的声明提供独立的命名空间。可以通过控制变量在包外面的可见性或导出情况来隐藏信息：以大写字母开头的标识符对其他包可见。
+
+在下面的示例中，两个不同的.go文件都在同一个包中，temps.go文件中的代码如下：
+
+```go
+//定一个包和包级别的常量和类型声明，并且首字母均大写
+package tempconv
+
+import "fmt"
+
+type Celsius float64
+type Fahrenheit float64
+
+const (
+	AbsoluteZeroC Celsius = -273.15
+	FreezingC     Celsius = 0
+	BoilingC      Celsius = 100
+)
+
+func (c Celsius) String() string {
+	return fmt.Sprintf("%g℃", c)
+}
+func (f Fahrenheit) String() string {
+	return fmt.Sprintf("%g℉", f)
+}
+```
+
+由于上述代码定义的是包级别的常量和类型声明，因此它们可以在同一个包中直接被引用，并且它们的名字都是以大写字母开头的，因此也可以在其他包中被引用。
+
+conv.go文件中的代码如下：
+
+```go
+//定义温度相互转换的方法
+package tempconv
+
+func CToF(c Celsius) Fahrenheit {
+	return Fahrenheit(c*9/5 + 32)
+}
+
+func FtoC(f Fahrenheit) Celsius {
+	return Celsius((f - 32) * 5 / 9)
+}
+```
+
+如果不是在同一个包中调用，而是在其他包中使用上述定义的常量和类型声明，需要导入其所在的包，并且通过包名的形式进行访问。
+
+例如，下述代码在main包中调用tempconv包中的成员，此时需要使用`tempconv.成员`的形式进行访问：
+
+```go
+//测试多个.go文件在同一个包中的调用情况
+package main
+
+import (
+	"chapter2/tempconv"
+	"fmt"
+)
+
+func main() {
+	fmt.Printf("TTTT! %v\n", tempconv.AbsoluteZeroC) //输出：TTTT! -273.15℃
+	fmt.Println(tempconv.CToF(tempconv.BoilingC))    //输出：212℉
+}
+```
+
+package声明的前面通常需要写明对整个包进行描述的文档注释。并且每一个包里只有一个文件应该包含该包的文档注释。扩展的文档注释通常放在一个文件中，按惯例名字叫做doc.go。
+
+注意：
+
+- 包级别的成员，在其所在的包中的任意文件都可见，可以直接通过名称来引用。
+- 如果包级别的声明以大写字母开头，那么它将在其他包中也可见，可以在其他包中通过`包名.成员`的形式进行引用。
 
 ### 定义类型
 
