@@ -238,6 +238,78 @@ Go语言不会为常量推断类型，而是直接将其标识为无类型（unt
 
 ### 常量生成器 iota
 
+可以实现类似枚举的功能。
+
+未使用iota：
+
+```go
+const (
+	cpp    = 0
+	java   = 1
+	python = 2
+	golang = 3
+)
+```
+
+使用了iota之后：
+
+```go
+
+const (
+	cpp = iota
+	java
+	python
+	golang
+)
+fmt.Println(cpp, java, python, golang) //输出：0 1 2 3
+```
+
+忽略其中的某个常量：
+
+```go
+const (
+	cpp = iota
+	_
+	python
+	golang
+)
+fmt.Println(cpp, python, golang) //输出：0 2 3
+```
+
+iota可以直接参与运算：
+
+```go
+const (
+	a = 2 * iota
+	b
+	c
+	d
+)
+fmt.Println(a, b, c, d) //输出：0 2 4 6
+```
+
+例如：
+
+```go
+const (
+	b = 1 << (10 * iota)
+	kb
+	mb
+	gb
+	tb
+	pb
+)
+fmt.Println(b, kb, mb, gb, tb, pb)
+```
+
+输出：
+
+```
+1 1024 1048576 1073741824 1099511627776 1125899906842624
+```
+
+
+
 ### 无类型常量
 
 只有常量才可以是无类型的。Go语言不会为没有声明为具体类型的常量进行类型推断，而是直接将其标识为无类型。
