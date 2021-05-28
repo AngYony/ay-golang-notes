@@ -1,4 +1,4 @@
-# Go-goroutine和channel
+# Go - goroutine-channel
 
 预想问题
 
@@ -78,6 +78,16 @@ wy:=go runSize()
 ```
 
 原因很容易理解，就像C#中的异步返回方法需要使用await关键字一样，而go语句本身就是异步执行的，直接按照上述方式接收返回值，是不被允许的，解决办法是使用channel。
+
+goroutine可能的切换点：
+
+- I/O,select（fmt下的print操作都是I/O）
+- channel
+- 等待锁
+- 函数调用（有时）
+- runtime.Gosched()
+
+上述只是参考，不能保证切换，不能保证在其他地方不切换。
 
 
 

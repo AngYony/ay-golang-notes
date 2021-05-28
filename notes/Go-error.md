@@ -85,3 +85,21 @@ func main() {
 
 > error类型像int或者string一样是一个“预定义标识符”，它不属于任何包。它是“全局块”的一部分，这意味着它在任何地方可用，不用考虑当前包信息。
 
+
+
+使用断言对已知的类型错误进行处理：
+
+```go
+func main() {
+	_, err := os.Open("abc.txt")
+	if err != nil {
+        //对err进行类型断言
+		if pathError, ok := err.(*os.PathError); ok {
+			fmt.Println(pathError.Err)
+		} else {
+			fmt.Println("未知错误", err)
+		}
+	}
+}
+```
+
