@@ -1,15 +1,5 @@
 # Go - goroutine-channel
 
-预想问题
-
-goroutine和chanel之间的关系？
-
-goroutine是什么？
-
-chanel是什么？
-
-channel允许goroutine互相发送数据并同步，这样一个goroutine就不会领先于另一个goroutine。？
-
 
 
 ## goroutine
@@ -121,6 +111,68 @@ myChannel = make(chan float64)
 ```go
 myChannel := make(chan float64)
 ```
+
+#### 创建只能进行发数的channel
+
+如果想要创建一个只能进行发数操作而不能进行读取操作的channel，可以使用如下形式：
+
+```go
+sendChan := make(chan<- int)
+sendChan <- 2
+//尝试进行读数将会提示编译错误
+//n := <-sendChan
+```
+
+示例：
+
+```go
+//返回channel，这个channel在外部只能发数据
+func createWorker(id int) chan<- int {
+	c := make(chan int)
+	//对channel持续取值
+	go func() {
+		for {
+			fmt.Printf("Worker %d 接收值：%c \n", id, <-c)
+		}
+	}()
+	return c
+}
+```
+
+#### 创建只能进行读数的channel
+
+同样，可以使用下述方式创建只能进行读数的channel：
+
+```go
+redChan := make(<-chan int)
+```
+
+示例：
+
+```go
+func msgGen() <-chan string {
+	c := make(chan string)
+	go func() {
+		i := 0
+		for {
+			time.Sleep(time.Duration(rand.Intn(2000)) * time.Millisecond)
+			c <- fmt.Sprintf("message %d", i)
+			i++
+		}
+	}()
+	return c
+}
+func main() {
+	m := msgGen()
+	for {
+		fmt.Println(<-m)
+	}
+}
+```
+
+为channel指明方向，一般常用于参数类型为channel的函数，通过对函数的参数进行上述的声明，可以防止和提示函数外部可以进行或不能执行的操作。
+
+
 
 ### 使用chanel发送和接收值
 
@@ -441,6 +493,33 @@ func filterGopher(upstream, downstream chan string) {
 }
 ```
 
+注意：close操作，永远是发送方关闭。
+
+接收方可以使用如下两种形式进行判断：
+
+方式一：`v, ok := <-c`
+
+方式二：for ... range... 语句
+
+```go
+func worker(id int, c <-chan int) {
+   //方式二，推荐
+   for n := range c {
+      fmt.Printf("Worker %d 接收值：%d \n", id, n)
+   }
+
+   //或者：
+   for {
+      //方式一
+      n, ok := <-c
+      if !ok {
+         break
+      }
+      fmt.Printf("Worker %d 接收值：%d \n", id, n)
+   }
+}
+```
+
 
 
 ## 并发状态
@@ -500,6 +579,80 @@ func (v *Visited) VisitLink(url string) int {
 
 - 尽可能地简化互斥锁保护的代码。
 - 对每一份共享状态只使用一个互斥锁。
+
+
+
+## sync.WaitGroup
+
+示例：
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+)
+
+type worker struct {
+	in   chan int
+	done func()
+}
+
+//将channel作为参数
+func doWork(id int, w worker) {
+	//从channel中读数
+	for n := range w.in {
+		fmt.Printf("Worker %d 接收值：%d \n", id, n)
+		//调用外部定义的done函数
+		w.done()
+	}
+}
+
+//返回channel，这个channel在外部只能发数据
+func createWorker(id int, wg *sync.WaitGroup) worker {
+	//创建channel
+	w := worker{
+		in: make(chan int),
+		//定义done函数将要执行的操作
+		done: func() {
+			wg.Done()
+		},
+	}
+	//定义channel取数goroutine
+	go doWork(id, w)
+	return w
+}
+
+//具备方向指向的channel的使用
+func chanDemo() {
+	var wg sync.WaitGroup
+
+	var workers [10]worker
+	for i := 0; i < 10; i++ {
+		workers[i] = createWorker(i, &wg)
+	}
+
+	wg.Add(20) //添加任务数量
+
+	for i, worker := range workers {
+		//向每个channel发送数据
+		worker.in <- 'a' + i
+	}
+	//进行第二批发数
+	for i, worker := range workers {
+		//向每个channel发送数据
+		worker.in <- 'A' + i
+		//<-workers[i].done
+	}
+	wg.Wait()
+
+}
+
+func main() {
+	chanDemo()
+}
+```
 
 
 

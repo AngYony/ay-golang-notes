@@ -94,3 +94,6 @@ go run -race wy.go
 
 
 
+### go tool pprof
+
+查看性能成本，CPU使用率等

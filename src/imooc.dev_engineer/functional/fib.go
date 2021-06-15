@@ -50,5 +50,6 @@ func main() {
 	//}
 
 	f := fibonacci2()
+	//f实现了reader接口，所以可以传入下述函数
 	printFileContents(f)
 }
