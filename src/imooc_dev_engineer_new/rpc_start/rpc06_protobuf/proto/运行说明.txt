@@ -1,0 +1,2 @@
+进入到hellowold.proto文件所在的目录，执行下述命令：
+protoc -I . helloworld.proto --go_out=plugins=grpc:.

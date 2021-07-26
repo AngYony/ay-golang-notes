@@ -95,6 +95,26 @@ message Trip{
 protoc --go_out=paths=source_relative:gen/go  .\trip.proto
 ```
 
+`:`后面表示的的是路径。
+
+示例二：
+
+```
+protoc -I . helloworld.proto --go_out=plugins=grpc:.
+```
+
+命令用法说明：
+
+`-I`：表示路径在什么位置之下，上面命令描述的是helloworld.proto文件在当前目录（.）下。
+
+`plugins=grpc`表示运行插件protoc-gen-go。
+
+`:`后面表示的的是路径，这里是生成到当前路径下（.）。
+
+
+
+
+
 ### 编写go文件
 
 ```go
