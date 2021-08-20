@@ -36,11 +36,12 @@ import (
 核心代码：
 
 ```go
-//检测Reader中的编码格式并返回
-func determineEncoding(r io.Reader) encoding.Encoding {
-	bytes, err := bufio.NewReader(r).Peek(1024)
+// 检测Reader中的编码格式并返回
+func determineEncoding(r *bufio.Reader) encoding.Encoding {
+	bytes, err := r.Peek(1024)
 	if err != nil {
-		panic(err)
+		log.Printf("fetcher error:%v", err)
+		return unicode.UTF8
 	}
 	e, _, _ := charset.DetermineEncoding(bytes, "")
 	return e
@@ -64,8 +65,9 @@ func main() {
 		return
 	}
 
-	e := determineEncoding(response.Body)
-	utf8Reader := transform.NewReader(response.Body, e.NewDecoder())
+	bodyReader := bufio.NewReader(response.Body)
+	e := determineEncoding(bodyReader)
+	utf8Reader := transform.NewReader(bodyReader, e.NewDecoder())
 	all, err := ioutil.ReadAll(utf8Reader)
 	if err != nil {
 		panic(err)
