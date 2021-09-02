@@ -75,3 +75,27 @@ type Product struct {
 db.Model(&product).Updates(Product{Price:200,Remark:sql.NullString{String:"", Valid: true}})
 ```
 
+
+
+## 查询操作
+
+支持三种方式：
+
+- struct，最接近面向对象思想，不需要关注数据库表的列，不容易出错，但会忽略零值的处理。
+- map，介于struct和string两种方式之间，不会出错，也不会忽略零值的处理。
+- string，对应SQL语句的方式，写法最灵活，但是需要正确的指定数据库表的字段。
+
+```go
+// 查询一条记录
+var user User
+db.Where(&User{MyName:"wy"}).First(&user)
+
+//查询多条记录
+var users []User
+db.Where(&User{MyName:"wy"}).Find(&users)
+```
+
+注意：使用struct的形式进行查询操作时，仍然会忽略零值。
+
+
+
