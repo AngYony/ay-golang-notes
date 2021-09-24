@@ -6,3 +6,12 @@ user_srv:
 
 jwt:
   key: 'H0!!IplcbiaZA!tSr#O%KavAz3*ZqLAl'
+
+sms:
+  key: ''
+  secrect: ''
+  expire: 300
+
+redis:
+  host: '59.110.216.174'
+  port: 6379

@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v8"
+
 	"github.com/dgrijalva/jwt-go"
 
 	"google.golang.org/grpc/codes"
@@ -232,5 +234,36 @@ func PassWordLogin(c *gin.Context) {
 
 		}
 	}
+
+}
+
+// 用户注册
+func Register(c *gin.Context) {
+
+	registerForm := forms.RegisterForm{}
+
+	// 表单验证不通过，直接返回
+	if err := c.ShouldBind(&registerForm); err != nil {
+		HandleValidatorError(c, err)
+		return
+	}
+
+	// 手机验证码校验
+	rdb := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%s:%d", global.ServerConfig.RedisInfo.Host, global.ServerConfig.RedisInfo.Port),
+	})
+	// 并设置过期时间
+	rdb.Get(context.Background(), registerForm.Mobile)
+
+	ip := global.ServerConfig.UserSrvInfo.Host
+	port := global.ServerConfig.UserSrvInfo.Port
+	// 拨号连接用户grpc服务器
+	userConn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, port), grpc.WithInsecure())
+	if err != nil {
+		zap.S().Errorw("[GetUserList] 连接 【用户服务失败】", "msg", err.Error())
+	}
+
+	// 生成grpc的client并调用接口
+	userSrvClient := proto.NewUserClient(userConn)
 
 }
