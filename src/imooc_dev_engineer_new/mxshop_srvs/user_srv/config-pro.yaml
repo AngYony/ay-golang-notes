@@ -1,0 +1,6 @@
+mysql:
+  host: '59.110.216.174'
+  port: 7306
+  user: 'root'
+  password: 'root123456@'
+  db: 'mxshop_user_srv'

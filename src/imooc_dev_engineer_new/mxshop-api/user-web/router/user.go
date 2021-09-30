@@ -15,5 +15,7 @@ func InitUserRouter(Router *gin.RouterGroup) {
 			middlewares.IsAdminAuth(),
 			api.GetUserList)
 		UserRouter.POST("pwd_login", api.PassWordLogin)
+		// 注册接口
+		UserRouter.POST("register", api.Register)
 	}
 }

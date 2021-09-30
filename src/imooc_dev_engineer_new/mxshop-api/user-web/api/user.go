@@ -24,7 +24,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
 )
 
 // 将grpc的code转换为http状态码
@@ -81,21 +80,12 @@ func HandleValidatorError(c *gin.Context, err error) {
 
 func GetUserList(ctx *gin.Context) {
 
-	ip := global.ServerConfig.UserSrvInfo.Host
-	port := global.ServerConfig.UserSrvInfo.Port
-	// 拨号连接用户grpc服务器
-	userConn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, port), grpc.WithInsecure())
-	if err != nil {
-		zap.S().Errorw("[GetUserList] 连接 【用户服务失败】", "msg", err.Error())
-	}
-
 	// 获取认证通过后的用户名信息
 	claims, _ := ctx.Get("claims")
 	currentUser := claims.(*models.CustomClaims) // 将类型转换为自定义Claim
 	zap.S().Infof("访问用户:%d", currentUser.ID)
 
 	// 生成grpc的client并调用接口
-	userSrvClient := proto.NewUserClient(userConn)
 
 	// 获取前端传入的分页参数
 	pn := ctx.DefaultQuery("pn", "0")
@@ -104,7 +94,7 @@ func GetUserList(ctx *gin.Context) {
 	pnInt, _ := strconv.Atoi(pn)
 	pSizeInt, _ := strconv.Atoi(pSize)
 
-	rsp, err := userSrvClient.GetUserList(context.Background(), &proto.PageInfo{
+	rsp, err := global.UserSrvClient.GetUserList(context.Background(), &proto.PageInfo{
 		Pn:    uint32(pnInt),
 		PSize: uint32(pSizeInt),
 	})
@@ -153,27 +143,27 @@ func PassWordLogin(c *gin.Context) {
 		return
 	}
 
-	// 验证码验证
-	if !store.Verify(passwordLoginForm.CaptchaId, passwordLoginForm.Captcha, true) {
+	// 验证码验证，测试时，clear指定为false；生产中要指定为true
+	if !store.Verify(passwordLoginForm.CaptchaId, passwordLoginForm.Captcha, false) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"captcha": "验证码错误",
 		})
 		return
 	}
 
-	ip := global.ServerConfig.UserSrvInfo.Host
-	port := global.ServerConfig.UserSrvInfo.Port
-	// 拨号连接用户grpc服务器
-	userConn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, port), grpc.WithInsecure())
-	if err != nil {
-		zap.S().Errorw("[GetUserList] 连接 【用户服务失败】", "msg", err.Error())
-	}
-
-	// 生成grpc的client并调用接口
-	userSrvClient := proto.NewUserClient(userConn)
+	// ip := global.ServerConfig.UserSrvInfo.Host
+	// port := global.ServerConfig.UserSrvInfo.Port
+	// // 拨号连接用户grpc服务器
+	// userConn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, port), grpc.WithInsecure())
+	// if err != nil {
+	// 	zap.S().Errorw("[GetUserList] 连接 【用户服务失败】", "msg", err.Error())
+	// }
+	//
+	// // 生成grpc的client并调用接口
+	// userSrvClient := proto.NewUserClient(userConn)
 
 	// 登录的逻辑处理
-	if rsp, err := userSrvClient.GetUserMobile(context.Background(), &proto.MobileRequest{
+	if rsp, err := global.UserSrvClient.GetUserMobile(context.Background(), &proto.MobileRequest{
 		Mobile: passwordLoginForm.Mobile,
 	}); err != nil {
 		if fromError, ok := status.FromError(err); ok {
@@ -191,7 +181,7 @@ func PassWordLogin(c *gin.Context) {
 		}
 	} else {
 		// 查询到了用户，需要检查密码是否正确
-		if pasRsp, pasErr := userSrvClient.CheckPassWord(context.Background(), &proto.PassWordCheckInfo{
+		if pasRsp, pasErr := global.UserSrvClient.CheckPassWord(context.Background(), &proto.PassWordCheckInfo{
 			PassWord:          passwordLoginForm.PassWord,
 			EncryptedPassWord: rsp.PassWord,
 		}); pasErr != nil {
@@ -253,17 +243,67 @@ func Register(c *gin.Context) {
 		Addr: fmt.Sprintf("%s:%d", global.ServerConfig.RedisInfo.Host, global.ServerConfig.RedisInfo.Port),
 	})
 	// 并设置过期时间
-	rdb.Get(context.Background(), registerForm.Mobile)
-
-	ip := global.ServerConfig.UserSrvInfo.Host
-	port := global.ServerConfig.UserSrvInfo.Port
-	// 拨号连接用户grpc服务器
-	userConn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, port), grpc.WithInsecure())
-	if err != nil {
-		zap.S().Errorw("[GetUserList] 连接 【用户服务失败】", "msg", err.Error())
+	value, err := rdb.Get(context.Background(), registerForm.Mobile).Result()
+	if err == redis.Nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"msg": "验证码错误",
+		})
+		return
+	}
+	if value != registerForm.Code {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"msg": "验证码错误",
+		})
+		return
 	}
 
-	// 生成grpc的client并调用接口
-	userSrvClient := proto.NewUserClient(userConn)
+	// ip := global.ServerConfig.UserSrvInfo.Host
+	// port := global.ServerConfig.UserSrvInfo.Port
+	// // 拨号连接用户grpc服务器
+	// userConn, err := grpc.Dial(fmt.Sprintf("%s:%d", ip, port), grpc.WithInsecure())
+	// if err != nil {
+	// 	zap.S().Errorw("[GetUserList] 连接 【用户服务失败】", "msg", err.Error())
+	// }
+	//
+	// // 生成grpc的client并调用接口
+	// userSrvClient := proto.NewUserClient(userConn)
+	user, err := global.UserSrvClient.CreateUser(context.Background(), &proto.CreateUserInfo{
+		NickName: registerForm.Mobile,
+		PassWord: registerForm.PassWord,
+		Mobile:   registerForm.Mobile,
+	})
+
+	if err != nil {
+		zap.S().Errorw("[Register] 查询 【新建用户】失败：%s", err.Error())
+		HandleGrpcErrorToHttp(err, c)
+		return
+	}
+
+	// 生成token
+	j := middlewares.NewJWT()
+	claims := models.CustomClaims{
+		ID:          uint(user.Id),
+		NickName:    user.NickName,
+		AuthorityId: uint(user.Role),
+		StandardClaims: jwt.StandardClaims{
+			NotBefore: time.Now().Unix(),               // 签名的生效时间
+			ExpiresAt: time.Now().Unix() + 60*60*24*30, // 30天过期
+			Issuer:    "AngYony",
+		},
+	}
+	token, err := j.CreateToken(claims)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"msg": "生成token失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":         user.Id,
+		"nick_name":  user.NickName,
+		"token":      token,
+		"expired_at": (time.Now().Unix() + 60*60*24*30) * 1000,
+	})
 
 }

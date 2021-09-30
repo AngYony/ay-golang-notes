@@ -21,5 +21,5 @@ type User struct {
 	NickName string     `gorm:"type:varchar(20)"`
 	Birthday *time.Time `gorm:"type:datetime"`
 	Gender   string     `gorm:"column:gender;default:male;type:varchar(6) comment 'female表示女，male表示男'"`
-	Role     int        `gorm:"column:role;default:1;type:int comment '1表示普通用户，2表示管理员'"`
+	Role     int        `gorm:"column:role;default:2;type:int comment '1表示普通用户，2表示管理员'"`
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mxshop-api/user-web/global"
 	"mxshop-api/user-web/initialize"
+	"mxshop-api/user-web/utils"
 
 	ut "github.com/go-playground/universal-translator"
 
@@ -30,6 +31,21 @@ func main() {
 	if err := initialize.InitTrans("zh"); err != nil {
 		panic(err)
 	}
+
+	// 初始化srv的连接
+	initialize.InitSrvConn()
+
+	isPro := initialize.GetEnvInfo("MXSHOP_Pro")
+	// 如果是本地开发环境，端口号固定，如果是线上环境，则使用下述代码自动获取端口号
+	if isPro {
+		port, err := utils.GetFreePort()
+		if err == nil {
+			// 将配置中的端口设置为动态启动的端口，即本地端口
+			global.ServerConfig.Port = port
+		}
+	}
+
+	zap.S().Infof("配置信息：%v", global.ServerConfig)
 
 	// 注册验证器
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {

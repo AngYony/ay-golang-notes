@@ -1,12 +1,11 @@
 package initialize
 
 import (
-	"mxshop-api/user-web/global"
-
-	"go.uber.org/zap"
+	"mxshop_srvs/user_srv/global"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 func GetEnvInfo(env string) bool {
@@ -14,6 +13,7 @@ func GetEnvInfo(env string) bool {
 	return viper.GetBool(env)
 }
 
+// 初始化config
 func InitConfig() {
 
 	// 读取 PATH 环境变量值，如果是配置的新的环境变量，需要重启GoLand才能生效
@@ -22,9 +22,9 @@ func InitConfig() {
 	// 通过获取系统环境变量的形式，来动态加载不同的配置文件
 	isPro := GetEnvInfo("MXSHOP_Pro")
 
-	configFileName := "user-web/config-debug.yaml"
+	configFileName := "user_srv/config-debug.yaml"
 	if isPro {
-		configFileName = "user-web/config-pro.yaml"
+		configFileName = "user_srv/config-pro.yaml"
 	}
 
 	v := viper.New()
@@ -33,9 +33,11 @@ func InitConfig() {
 		panic(err)
 	}
 
-	if err := v.Unmarshal(global.ServerConfig); err != nil {
+	if err := v.Unmarshal(&global.ServerConfig); err != nil {
 		panic(err)
 	}
+
+	//	zap.S().Infof("配置信息：%v", global.ServerConfig)
 	// fmt.Println(v.Get("name"))
 	// 动态监听文件变化
 	v.WatchConfig()
