@@ -466,7 +466,7 @@ time.After函数会返回一个channel，该channel会在经过特定时间之�
 
 Go允许在没有值可供发送的情况下通过close函数关闭通道。
 
-通道被关闭之后将无法写入任何值，如果尝试写入值将会引发惊恐。尝试读取已被关闭的通道将会获得一个与通道类型对应的零值。
+通道被关闭之后将无法写入任何值，如果尝试写入值将会引发惊恐。**尝试读取已被关闭的通道将会获得一个与通道类型对应的零值。**
 
 注意：　当心！如果你在循环里面读取一个已关闭的通道，并且没有检查该通道是否已经关闭，那么这个循环将一直运转下去，并耗费大量的处理器时间。为了避免这种情况发生，请务必对那些可能会被关闭的通道做相应的检查。
 
@@ -582,6 +582,97 @@ func (v *Visited) VisitLink(url string) int {
 
 
 
+## sync.Pool
+
+表示对象缓存。
+
+其访问和 Processor 相关，每个 Processor 都包含有私有对象（协程安全）和共享池（协程不安全）。
+
+协程安全：访问的时候不需要锁；
+
+协程不安全：访问的时候需要锁；
+
+![image-20211008125157564](assets/image-20211008125157564.png)
+
+
+
+### sync.Pool 对象获取的机制
+
+- 尝试从私有对象获取，不需要锁，开销最小；
+- 私有对象不存在，尝试从当前 Processor 的共享池获取，需要锁；
+- 如果当前 Processor 共享池也是空的，那么就尝试去其他 Processor 的共享池获取；
+- 如果所有子池都是空的，最后就用用户指定的 New 函数产生一个新的对象返回。
+
+### sync.Pool 对象的放回机制
+
+- 如果私有对象不存在则保存为私有对象；
+- 如果私有对象存在，放入当前 Processor 子池的共享池中。
+
+### sync.Pool 对象的生命周期
+
+- GC会清除 sync.pool 缓存的对象；
+- 对象的缓存有效期为下一次 GC 之前。
+
+### sync.Pool 总结
+
+- 适合于通过复用，降低复杂对象的创建和GC代价；
+- 协程安全，会有锁的开销；
+- 生命周期受GC影响，不适合于做连接池等，需要自己管理生命周期的资源的池化。
+
+### sync.Pool 示例代码
+
+示例一：
+
+```go
+func TestSyncPool(t *testing.T) {
+	pool := &sync.Pool{
+		New: func() interface{} {
+			fmt.Println("创建了一个新对象")
+			return 100
+		},
+	}
+
+	v := pool.Get().(int) // 断言
+	fmt.Println(v)
+	pool.Put(3)
+    runtime.GC() // GC 会清除sync.pool 中缓存的对象
+	v1, _ := pool.Get().(int)
+	fmt.Println(v1)
+}
+```
+
+示例二，多个协程访问Pool时：
+
+```go
+func TestSyncPoolInMultiGroutine(t *testing.T) {
+	pool := &sync.Pool{
+		// 找不到的时候调用New方法
+		New: func() interface{} {
+			fmt.Println("创建了一个新对象")
+			return 10
+		},
+	}
+
+	pool.Put(100)
+	pool.Put(100)
+	pool.Put(100)
+
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(id int) {
+			fmt.Println(pool.Get())
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+}
+```
+
+
+
+
+
 ## sync.WaitGroup
 
 示例：
@@ -653,6 +744,102 @@ func main() {
 	chanDemo()
 }
 ```
+
+
+
+## sync.Once
+
+在多个goroutine中，Do()函数体内的内容，只会被执行一次。
+
+```go
+package singleton_test
+
+import (
+	"fmt"
+	"sync"
+	"testing"
+	"unsafe"
+)
+
+// 单例模式
+type Singleton struct{}
+
+var singleInstance *Singleton
+var once sync.Once
+
+func GetSingletonObj() *Singleton {
+	once.Do(func() {
+		fmt.Println("创建对象")
+		singleInstance = new(Singleton)
+	})
+	return singleInstance
+}
+
+func TestGetSingletonObj(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func() {
+			obj := GetSingletonObj()
+			// 输出对象的地址
+			fmt.Println(unsafe.Pointer(obj))
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+```
+
+输出：
+
+```
+创建对象
+0x5a2710
+0x5a2710
+...
+```
+
+
+
+## 任意任务完成
+
+```go
+func runTask(id int) string {
+	time.Sleep(time.Millisecond * 10)
+	return fmt.Sprintf("结果来自于 id:%d", id)
+}
+
+func FirstResponse() string {
+	numOfRunner := 10
+    // 为了防止多个协程挂起等待，一定要使用带buffer的channel
+	ch := make(chan string, numOfRunner)
+
+	for i := 0; i < numOfRunner; i++ {
+		go func(i int) {
+			ret := runTask(i)
+			ch <- ret
+		}(i)
+	}
+	return <-ch
+
+}
+
+func TestFirstResponse(t *testing.T) {
+	// 输出系统中的协程数
+	fmt.Println(runtime.NumGoroutine())
+	fmt.Println(FirstResponse())
+	time.Sleep(time.Second)
+	fmt.Println(runtime.NumGoroutine())
+}
+```
+
+
+
+## 所有任务完成
+
+方式一：使用sync.WaitGroup（推荐）
+
+方式二：遍历取值的channel，依次得到每个任务的结果。
 
 
 
