@@ -84,5 +84,7 @@ go env -w GO111MODULE="on"
 
 ## 配置 GO 多版本管理工具
 
+推荐使用GVM
+
 [voidint/g: Golang Version Manager (github.com)](https://github.com/voidint/g)
 

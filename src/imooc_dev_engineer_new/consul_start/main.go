@@ -8,7 +8,7 @@ import (
 
 func Register(address string, port int, name string, tags []string, id string) error {
 	cfg := api.DefaultConfig()
-	//consul服务所在的地址信息，安装的服务器所在的地址
+	// consul服务所在的地址信息，安装的服务器所在的地址
 	cfg.Address = "192.168.171.223:8500"
 
 	client, err := api.NewClient(cfg)
@@ -88,7 +88,7 @@ func FilterServices() {
 
 func main() {
 	// 虚拟机能够访问的本地电脑的地址
-	// _ = Register("10.112.51.198", 8021, "user-web", []string{"mxshop", "wy"}, "user-web")
-	// AllServices()
+	_ = Register("10.112.51.198", 8021, "user-web", []string{"mxshop", "wy"}, "user-web")
+	AllServices()
 	FilterServices()
 }

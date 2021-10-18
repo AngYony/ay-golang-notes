@@ -1,0 +1,21 @@
+# nacos 配置
+host: "192.168.171.223"
+port: 8848
+namespace: '0acc94cf-4d1b-4be7-8f90-b651b3049e33'
+user: 'nacos'
+password: 'nacos'
+dataid: 'user-srv.json'
+group: 'pro'
+
+#name: 'user-srv'
+#mysql:
+#  host: '59.110.216.174'
+#  port: 7306
+#  user: 'root'
+#  password: 'root123456@'
+#  db: 'mxshop_goods_srv'
+#
+#
+#consul:
+#  host: '192.168.171.223'
+#  port: 8500
