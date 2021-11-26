@@ -1,5 +1,11 @@
 # Go - GRPC
 
+RPC：Remote Procedure Call，远程过程调用，简单的理解就是一个节点请求另一个节点提供的服务。
+
+
+
+
+
 
 
 ## 开发环境配置
