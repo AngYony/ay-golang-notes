@@ -104,6 +104,33 @@ default:
 
 
 
+### switch 做类型的推断匹配
+
+```go
+func main() {
+
+	var x interface{} = func(x int) string {
+		return fmt.Sprintf("d:%d", x)
+	}
+
+	switch v := x.(type) {
+
+	case func(int) string:
+		fmt.Println(v(100))
+	case int:
+		fmt.Println("int类型")
+	case nil:
+		fmt.Println("nil")
+	default:
+		fmt.Println("无类型")
+	}
+}
+```
+
+
+
+
+
 ## for
 
 在Go语言中，循环只有for关键字可用。
