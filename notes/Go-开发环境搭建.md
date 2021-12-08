@@ -1,5 +1,30 @@
 # Go开发环境搭建
 
+建议：先安装多版本管理工具GVM，再通过GVM安装Go。
+
+必须要配置的环境编辑：
+
+- GOROOT
+- GOPATH
+- PATH
+- GOPROXY
+
+
+
+## 配置 GO 多版本管理工具
+
+推荐使用GVM
+
+[voidint/g: Golang Version Manager (github.com)](https://github.com/voidint/g)
+
+
+
+
+
+
+
+
+
 ## GOROOT、GOPATH 和 GOBIN
 
 - GOROOT：Go 语言安装根目录的路径，也就是 GO 语言的安装路径。
@@ -81,10 +106,4 @@ go env -w GO111MODULE="on"
 关于GO111MODULE 的相关介绍：https://learnku.com/go/t/39086
 
 
-
-## 配置 GO 多版本管理工具
-
-推荐使用GVM
-
-[voidint/g: Golang Version Manager (github.com)](https://github.com/voidint/g)
 
