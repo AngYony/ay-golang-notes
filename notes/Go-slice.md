@@ -20,6 +20,12 @@ type SliceHeader struct {
 
 Cap成员表示切片指向的内存空间的最大容量（对应元素的个数，而不是字节数）。
 
+关键点总结：
+
+- 切片是数组的一个引用，因此切片是引用类型
+- 切片的遍历、元素的访问和切片长度计算（len(slice)）都和数组一样。
+- 切片的长度可以动态变化
+
 
 
 ## 切片的定义方式
@@ -34,6 +40,7 @@ var (
 	d = c[:2]             // 有2个元素的切片，len为2，cap为3
 	e = c[0:2:cap(c)]     // 有2个元素切片，len为2，cap为3
 	f = c[:0]             // 有0个元素的切片，len为0，cap为3
+    // 通过make函数创建切片
 	g = make([]int, 3)    // 有3个元素的切片，len和cap都为3
 	h = make([]int, 2, 3) // 有2个元素的切片，len为2，cap为3
 	i = make([]int, 0, 3) // 有0个元素的切片，len为0，cap为3
@@ -49,6 +56,14 @@ var (
 在对切片本身进行赋值或参数传递时，和数组指针的操作方式类似，但是只复制切片头信息（reflect.SliceHeader），而不会复制底层的数据。对于类型，和数组的最大不同是，切片的类型和长度信息无关，只要是相同类型元素构成的切片均对应相同的切片类型。
 
 切片是一种简化版的动态数组，这是切片类型的灵魂。
+
+使用make方式创建切片时：
+
+- 可以指定切片大小和容量
+- 如果没有给切片的各个元素赋值，那么每个元素默认为零值。
+- 对应的底层数组由make底层维护，对外不可见，即只能通过slice进行操作。
+
+
 
 #### 切片运算符（不推荐，需要关注底层数组对切片的影响）
 
@@ -331,6 +346,17 @@ func main() {
 
 限定切片的容量，最主要的作用是在调用append方法时，防止传入容量过大的切片，导致底层数组没有足够的空间（容量）来执行追加操作，而需要创建容量是原数组的两倍的新数组，并将元素复制到新分配的数组而带来的性能开销。
 
+### 切片的拷贝
+
+```go
+var slice1 = []int{1, 2, 3, 4}
+var slice2 = []int{10}
+copy(slice2, slice1)
+fmt.Println(slice2) //输出：[1]
+```
+
+上述程序中，slice2只有一个元素，使用copy()将slice1的元素拷贝到slice2中，程序不会报错，会成功的拷贝一个元素到slice2中。
+
 
 
 ## 切片内存技巧
@@ -447,6 +473,70 @@ fmt.Println(myArray) 	//输出：[11 22 3 4 5]
 ==如果多个切片指向了同一个底层数组，数组的元素修改会反映给所有的切片。==
 
 ![image-20211002163437618](assets/image-20211002163437618.png)
+
+```go
+func main() {
+	// 声明一个数组
+	var intArr = [...]int32{1, 2, 3, 4, 5} // int类型数据占用4个字节
+	fmt.Printf("intArr的地址为：%p\n", &intArr)
+	for i := 0; i < len(intArr); i++ {
+		fmt.Printf("intArr[%d]的值为：%d\t地址为：%p\n", i, intArr[i], &intArr[i])
+	}
+
+	// 基于数组声明一个切片
+	var intSlice = intArr[2:5]
+	fmt.Printf("切片的长度：%d\t切片的容量：%d\n", len(intSlice), cap(intSlice))
+	// 打印每个切片元素的值和地址
+	for i, _ := range intSlice {
+		fmt.Printf("intSlice[%d]的值为：%d\t地址为：%p\n", i, intSlice[i], &intSlice[i])
+	}
+    
+    // 修改切片中元素的值
+	intSlice[2] = 555
+	// 获取底层数组的值
+	for _, num := range intArr {
+		fmt.Printf("%d\t", num)
+	}
+    
+    // 修改底层数组的值
+	intArr[2] = 3333
+	fmt.Println("\n同样，修改了底层数组的元素之后，也会直接影响切片的值：")
+	for _, num := range intSlice {
+		fmt.Printf("%d\t", num)
+	}
+}
+```
+
+输出：
+
+```
+intArr的地址为：0xc00000c150
+intArr[0]的值为：1      地址为：0xc00000c150
+intArr[1]的值为：2      地址为：0xc00000c154
+intArr[2]的值为：3      地址为：0xc00000c158
+intArr[3]的值为：4      地址为：0xc00000c15c
+intArr[4]的值为：5      地址为：0xc00000c160
+切片的长度：3   切片的容量：3               
+intSlice[0]的值为：3    地址为：0xc00000c158
+intSlice[1]的值为：4    地址为：0xc00000c15c
+intSlice[2]的值为：5    地址为：0xc00000c160
+修改了切片的元素之后，底层数组也跟着修改：              
+1       2       3       4       555  
+同样，修改了底层数组的元素之后，也会直接影响切片的值：  
+3333    4       555 
+```
+
+切片定义如下，上述代码中，intSlice切片的Data指向的就是底层数组截取的起始元素的地址。
+
+```go
+type SliceHeader struct {
+	Data uintptr
+	Len int
+	Cap int
+}
+```
+
+
 
 
 
