@@ -1,5 +1,7 @@
 # Go - 字符串
 
+其他编程语言中的字符串由字符组成，==而Go语言中的字符串是由字节组成的==。
+
 一个字符串是一个不可改变的字节序列，它是一个只读的字节数组，因此使用len()函数时，获取的是字符串字节数，而不是字符的个数。
 
 Go中字符串的关键点描述：
@@ -46,6 +48,43 @@ fmt.Println(utf8.RuneCountInString(utf8String))	 //输出：3
 ## 字符串操作
 
 `s[i:j]`：按照原字符串的**字节**的下标方式来产生新字符串，下标从`i`（含边界值）开始，直到`j`（不含边界值），结果的大小为`j-i`个字节。在使用时，如果省略了i或者j，则取其默认值，操作数i的默认值为字符串的起始位置，值为0；操作数j的默认值为字符串的终止位置，值为len(s)。
+
+### 字符串遍历
+
+#### byte方式（不推荐）
+
+```go
+wy := "中国"
+for i := 0; i < len(wy); i++ {
+	fmt.Printf("%d:[%c] ", i, wy[i])
+}
+```
+
+输出：
+
+```
+0:[ä] 1:[¸] 2:[­] 3:[å] 4:[ 5:[½] 
+```
+
+#### rune方式
+
+```go
+for index, str := range wy {
+	fmt.Printf("%d:%c", index, str)
+}
+```
+
+输出：
+
+```
+0:中3:国
+```
+
+推荐使用for...range..对字符串进行遍历，可以正确识别每个字符，包括汉字等复杂字符。
+
+
+
+
 
 
 
@@ -206,6 +245,22 @@ fmt.Println(utf8.RuneCountInString(zg)) //输出：2
 
 ## 其他类型与字符串类型之间的相互转换
 
+其他类型转换为string类型，有以下几种方式：
+
+- fmt.Sprintf("%参数",表达式)（推荐）
+
+- 使用strconv包的函数
+
+  ```go
+  func FormatBool(b bool) string
+  func FormatInt(i int64, base int) string
+  func FormatUint(i uint64, base int) string
+  func FormatFloat(f float64, fmt byte, prec, bitSize int) string
+  func Itoa(i int) string
+  ```
+
+- string()
+
 ### `[]byte` <=> string
 
 []byte 转换成string：
@@ -288,4 +343,66 @@ fmt.Println(c) //输出：10
 ### bool <=> string（不支持相互转换）
 
 在Go语言中，布尔值并没有与之相等的数字值或者字符串值，因此尝试使用<code>string(false)</code>、<code>int(false)</code>这样的方法来转换布尔值，或者尝试使用<code>bool(1)</code>、<code>bool("yes")</code>等方法来获取布尔值，Go编译器都会报告错误。
+
+
+
+
+
+
+
+## 转义字符
+
+| 字符 | 描述                           |
+| ---- | ------------------------------ |
+| `\t` | 制表位                         |
+| `\n` | 换行                           |
+| `\"` | 转义双引号，`\`本身作为转义    |
+| `\r` | 回车，不换行，会替换掉顶头字符 |
+
+例如：
+
+```
+fmt.Println("张三李\r四")
+```
+
+将会输出：
+
+```
+四三李
+```
+
+这是因为`\r`只回车，不换行，它将从当前行的最前面开始输出，覆盖掉以前内容。
+
+
+
+## 字符串常用函数
+
+主要使用到两个包：
+
+- strconv：字符串相关的类型转换
+- strings：字符串操作的
+
+| 函数名                              | 描述                                                         |
+| ----------------------------------- | ------------------------------------------------------------ |
+| len(str)                            | 内置函数，按字节获取字符串的长度，如果按照字符，需要转换为[]rune。 |
+| strconv.Itoa(num)                   | 将int类型转换为字符串类型,等价于 strconv.FormatInt(num,10)。 |
+| strconv.Atoi(str)                   | 将字符串转换为int，等同于strconv.ParseInt(str,10,0)          |
+| []byte(str)                         | 字符串转bype数组                                             |
+| string([]byte{...})                 | []byte转字符串                                               |
+| strconv.FormatInt(num,b)            | 10进制数转2/8/16进制，第二个参数指定进制位格式               |
+| strings.Contains(str1,str2)         | 判断字符串str1里是否包含子串str2                             |
+| strings.Count(str1,str2)            | 统计一个字符串str1中有几个子串str2                           |
+| strings.EqualFold(str1,str2)        | 比较两个字符串是否相同，不区分大小写，如果区分大小写，可以使用`==` |
+| strings.Index(str1,str2)            | 返回子串str2第一次出现在字符串str1中的下标位置，从0开始，没有返回-1，表不存在 |
+| strings.LastIndex(str1,str2)        | 返回子串最后一次出现的下标位置，没有返回-1                   |
+| strings.Replace(str1,str2,str3,num) | 将字符串str1中的子串str2替换成另一个子串str3，num指定替换的个数，如果num=-1表示全部替换 |
+| strings.Split(str,c)                | 将字符串str按照字符c进行分割，返回字符串数组                 |
+| strings.ToUpper(str)                | 转换为大写                                                   |
+| strings.ToLower(str)                | 转换为小写                                                   |
+| strings.TrimSpace(str)              | 去除字符串左右两边空格                                       |
+| strings.Trim(str1,str2)             | 去除字符串str1左右两边的指定字符串str2                       |
+| strings.TrimLeft(str1,str2)         | 去除字符串左边的字符串                                       |
+| strings.TrimRight(str1,str2)        | 去除字符串右边的字符串                                       |
+| strings.HasPrefix(str1,str2)        | 判断字符串是否以指定的字符串开头                             |
+| strings.HasSuffix(str1,str2)        | 判断字符串是否以指定的字符串结尾                             |
 
