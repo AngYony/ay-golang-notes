@@ -4,9 +4,28 @@
 
 通常自定义的struct类型，都放在一个独立的包中，并且名称首字母大写（导出的），这样做，可以避免自定义类型名和其他变量名冲突。
 
-## 声明 struct
 
-方式一（不推荐）：使用struct关键字来声明一个struct类型。
+
+## struct 的声明与初始化
+
+struct的声明有以下几种方式。
+
+方式一（推荐），使用type关键字将struct作为基础类型：
+
+```go
+//定义一个名为car的类型
+type car struct {
+	name     string
+	topSpeed float64
+    //嵌套匿名结构体
+    wy struct{
+        name string
+        age int
+    }
+}
+```
+
+方式二（不推荐）：
 
 ```go
 var myStruct struct {
@@ -19,33 +38,13 @@ fmt.Printf("%#v", myStruct)
 fmt.Printf("%+v", myStruct)
 ```
 
-方式二（推荐）：通过type关键字定义一个struct类型。
+以上两种方式都是声明的是具名结构体。同时如方式一所示，可以在一个struct的字段中，定义匿名结构体字段。
 
-使用变量的形式声明struct平时较少使用，常见的是通过type关键字，创建基于struct的类型。
+struct的初始化操作有以下几种方式。
 
-### 使用type关键字将struct作为基础类型
-
-为了定义一个类型，需要使用type关键字，后面跟着新类型的名字，然后是你希望基于的基础类型。
-
-如果你使用struct类型作为你的基础类型，你需要使用struct关键字，后面跟着以花括号包裹的一组字段定义。
-
-类型经常定义在函数外的包级别。
-
-示例：
+方式一：
 
 ```go
-//定义一个名为part的类型
-type part struct {
-	desc  string
-	count int
-}
-
-//定义一个名为car的类型
-type car struct {
-	name     string
-	topSpeed float64
-}
-
 func main() {
 	var myCar car //定义一个car类型的变量
 	myCar.name = "hi"
@@ -54,38 +53,52 @@ func main() {
 }
 ```
 
-这种方式声明的struct类型变量，就和c#中创建的类，类名即为struct类型的变量名。因此，上述的car就可以当作C# 中的一个类，可以通过car声明新的变量：
+方式二，使用struct字面量形式初始化结构体：
 
 ```go
-var myCar car //定义一个car类型的变量
+var myCat Cat = Cat{age: 10, name: "小白"}
+myCat2 := Cat{age: 20, name: "小黑"}
 ```
 
-同时，使用方式也和C#中的类实例相似，可以将myCar作为实参，传入到形参是car类型的函数中。
+方式三，使用new()函数通过获取指针的方式初始化结构体：
 
 ```go
-//定义一个名为car的类型
-type car struct {
-	name     string
-	topSpeed float64
-}
-//定义一个形参为car类型的方法
-func run(c car) {
-	fmt.Println(c) //输出：{hi 30}
-	c.name = "wt"
-	c.topSpeed = 11.1
-	fmt.Println(c) //输出：{wt 11.1}
-}
-func main() {
-	var myCar car //定义一个car类型的变量
-	myCar.name = "hi"
-	myCar.topSpeed = 30.0
-	fmt.Println(myCar) //输出：{hi 30}
-	run(myCar)	//方法内部对变量值的修改并不会影响该变量的值，原因是go按照值类型传递
-	fmt.Println(myCar) //仍然输出：{hi 30}
-}
+var myCat3 *Cat = new(Cat)
+(*myCat3).age = 30 // 可省略星号
+myCat3.name = "小白" //省略了星号，go底层会对其进行处理，会加上(*myCat3)
+fmt.Println(*myCat3)
 ```
 
+如果使用new()方法来赋值：
 
+```go
+car2 := new(car)
+```
+
+相当于：
+
+```go
+car2 := &car{}
+```
+
+因为new()方法返回的是指针类型。
+
+方式四，声明匿名struct并直接初始化：
+
+```go
+my := struct {
+		name string
+		age  int
+	}{
+		name: "张三",
+		age:  10,
+	}
+	fmt.Println(my)
+```
+
+ 
+
+ 
 
 ## 自定义类型
 
@@ -108,36 +121,7 @@ func main() {
 
 定义类型不能用来与不同类型的值一起运算，即使它们是来自相同的基础类型。
 
-
-
-## struct字面量
-
-```go
-type car struct {
-	name     string
-	topSpeed float64
-}
-
-func main() {
-	//创建struct类型car的变量myCar，并同时为字段赋值
-	myCar := car{name: "hi", topSpeed: 20}
-	fmt.Println(myCar)
-}
-```
-
-如果使用new()方法来赋值：
-
-```go
-car2 := new(car)
-```
-
-相当于：
-
-```go
-car2 := &car{}
-```
-
-因为new()方法返回的是指针类型。
+ 
 
 
 
@@ -349,6 +333,23 @@ Number(4).PointerDouble()
 
 
 
+### 方法与函数的区别
+
+对于普通函数，接收者（这里指的是参数）是值类型时，不能将指针类型的数据直接传递，反之亦然。
+
+对于方法，接收者（这里指类型接收器）是值类型时，可以直接用指针类型的变量调用方法，反过来也同样可以，例如：
+
+```go
+func (p Person) test3(){
+}
+
+p:=Person{}
+// 此处使用指针类型的变量调用方法依然能够成功运行
+(&p).test3() //此处仍然按值传递
+```
+
+但需要注意的是：无论外部是否使用指针类型变量调用方法test3()，最终实现按值传递还是引用传递的，都是依据接收器是否绑定的是指针类型来决定的。上述代码中，由于test3()的接收器使用的是Person，因此即使外面使用了指针变量进行调用，依旧按照值传递，除非将方法的声明改为：`func (p *Person) test3(){}`。具体见下文说明。
+
 
 
 ## 使用指针实现按引用传值
@@ -375,7 +376,7 @@ func main() {
 如要要按照引用类型传递值，需要借助指针来代替形参。
 
 ```go
-//定义形参是指针类型的函数
+//定义形参是指针类型的函数，这个地方直接影响是引用传递值还是值传递
 func run(c *car) {
 	c.name = "wt"
 	c.topSpeed = 11.1
@@ -494,6 +495,10 @@ func main() {
 
 
 
+
+
+
+
 ## 组合
 
 Go语言不支持传统面向对象中的继承特性，而是以自己特有的组合方式支持了方法的继承。Go语言中，通过在结构体内置匿名的成员来实现继承：
@@ -507,16 +512,51 @@ type Point struct {
 }
 
 type ColoredPoint struct {
-	Point
-	Color color.RGBA
+	Point              // 嵌入匿名结构体
+	Color color.RGBA   // 嵌入有名结构体
+}
+
+func main(){
+    var myColor = &ColoredPoint{}
+    //可以直接调用嵌入的结构体的字段
+	myColor.X = 12.2
+	myColor.Y = 12.4
+	myColor.Color = color.RGBA{
+		R: 120,
+		G: 123,
+		B: 100,
+		A: 0,
+	}
+    
+    	var myColor2 = ColoredPoint{
+		Point{
+			X: 0,
+			Y: 0,
+		},
+		color.RGBA{
+			R: 0,
+			G: 0,
+			B: 0,
+			A: 0,
+		},
+	}
 }
 ```
 
 上述代码中，将Point嵌入ColoredPoint来提供X和Y这两个字段，这里将Point看作基类，把ColoredPoint看作Point的继承类或子类。
 
+重点：
+
+- 外部结构体可以使用内部嵌套的结构体的所有字段和方法，无论这些是否首字母大写都可以被调用。就像是嵌套的结构体完全属于本身一样。
+- 当结构体和匿名结构体有相同的字段或方法时，编译器采用就近访问原则访问，如希望访问匿名结构体的字段和方法，可以通过匿名结构体名来区分。
+- 结构体嵌入了两个（或多个）匿名结构体，如果两个匿名结构体有相同的字段和方法（同时结构体本身没有同名的字段和方法），在访问时，就必须明确指定匿名结构体名字，否则编译报错。
+- 尽量不使用多重继承（嵌入多个匿名结构体）
 
 
 
+## 结构体在内存中的结构
 
+- 结构体的所有字段在内存中是连续的。
+- 如果两个结构体要相互转换，需要满足条件：结构体中的字段名称、类型、个数都必须匹配。
 
 
