@@ -1,8 +1,14 @@
 # Go-panic-recover
 
-不建议使用panic和recover。Go开发人员被鼓励以处理程序其他部分的方式处理错误：使用if和return语句，以及error值。
+使用场景：
+
+Go中可以抛出一个panic的异常，然后在defer中通过recover捕获这个异常，然后正常处理。
+
+但是，不建议使用panic和recover。Go开发人员被鼓励以处理程序其他部分的方式处理错误：使用if和return语句，以及error值。
 
 > 不要在Go中寻找等同于其他编程语言中的exception的东西。这个特性被故意省略了。
+
+
 
 ## panic
 
