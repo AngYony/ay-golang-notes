@@ -1,4 +1,4 @@
-# Go - goroutine-channel
+# Go - goroutine-channel-sync
 
 
 
@@ -22,7 +22,25 @@
 
 
 
-## goroutine
+## MPG 模型
+
+M：代表真正的内核OS线程（物理线程）
+
+P：代goroutine调度的上下文，可以把它看作一个局部的调度器，使go代码在某一个线程上跑，它是实现从 N：1到 N：N 映射的关键。
+
+G：协程（goroutine），它有自己的栈，instruction pointer和其它信息（正在等待的channel等等），用于调度。
+
+ ![image-20211216125533871](assets/image-20211216125533871.png)
+
+![image-20211216130908721](assets/image-20211216130908721.png)
+
+
+
+   
+
+
+
+## goroutine（协程）
 
 goroutine的作用类似于多线程，但是但是goroutine比线程需要更少的计算机内存，启动和停止的时间更少，可以同时运行上万个goroutine。
 
@@ -104,23 +122,58 @@ goroutine可能的切换点：
 
 
 
-## MPG 模型
+### goroutine 与 recover
 
-M：代表真正的内核OS线程（物理线程）
+如果一个协程中出现panic，并且没有捕获这个panic，就会造成整个程序的崩溃。可以在goroutine中使用recover来捕获panic进行处理，这样即使这个协程发生了问题，但是主线程仍然不受影响，可以继续执行。
 
-P：代goroutine调度的上下文，可以把它看作一个局部的调度器，使go代码在某一个线程上跑，它是实现从 N：1到 N：N 映射的关键。
+```go
+package main
 
-G：协程（goroutine），它有自己的栈，instruction pointer和其它信息（正在等待的channel等等），用于调度。
+import (
+	"fmt"
+	"time"
+)
 
- ![image-20211216125533871](assets/image-20211216125533871.png)
+func sayHello() {
+	fmt.Println("Hello")
+}
 
-![image-20211216130908721](assets/image-20211216130908721.png)
+func sayFail() {
+	// defer必须定义在方法开头
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Println("方法发生了错误,", err)
+		}
+	}()
+
+	var myMap map[int]string
+	myMap[0] = "故意引发panic"
+	// panic()
+
+}
+func main() {
+	go sayHello()
+	go sayFail()
+	for {
+		fmt.Println("测试", time.Now())
+		time.Sleep(time.Second)
+	}
+}
+```
 
 
 
-   
 
-## channel（通道）
+
+
+
+## channel（管道）
+
+- channel是引用类型
+- channel必须初始化才能写入数据，即make后才能使用
+- channel的长度通过make指定后，就不能再自动增加；
+- channel关闭后，不能再写数据，但可以从管道中读数据
+- 
 
 channel可以将值从一个goroutine发送到另一个goroutine，并且可以确保在接收的goroutine尝试使用该值之前，发送的goroutine已经发送了该值。
 
@@ -150,6 +203,15 @@ myChannel = make(chan float64)
 ```go
 myChannel := make(chan float64)
 ```
+
+错误示例：
+
+``` go
+myChan := chan int  //编译错误
+// 短变量赋值后面直接跟具体的值即可,不需要再次指定类型
+```
+
+
 
 #### 创建只能进行发数的channel
 
@@ -272,6 +334,88 @@ channel := make(chan string,3)
 当另一个goroutine从channel接收一个值时，它从缓冲区中提取最早添加的值。
 
 额外的接收操作将继续清空缓冲区，而额外的发送操作将填充缓冲区。
+
+
+
+### channel 遍历与关闭
+
+Go允许在没有值可供发送的情况下通过close函数关闭通道。
+
+通道被关闭之后将无法写入任何值，如果尝试写入值将会引发惊恐。**尝试读取已被关闭的通道将会获得一个与通道类型对应的零值。**
+
+注意：　当心！如果你在循环里面读取一个已关闭的通道，并且没有检查该通道是否已经关闭，那么这个循环将一直运转下去，并耗费大量的处理器时间。为了避免这种情况发生，请务必对那些可能会被关闭的通道做相应的检查。
+
+执行下述代码获悉通道是否已经关闭：
+
+```go
+v, ok := <-c
+```
+
+如果第二个变量ok的值为false，说明通道已经被关闭。
+
+因为“从通道里面读取值，直到它被关闭为止”这种模式实在是太常用了，所以Go为此提供了一种快捷方式。通过在<code>range</code>语句里面使用通道，程序可以在通道被关闭之前，一直从通道里面读取值。即读取数据时，不用每次都判断通道是否已关闭。
+
+```go
+//形参是两个通道
+func filterGopher(upstream, downstream chan string) {
+    //使用range语句，迭代通道中的值
+    for item := range upstream {
+        if !strings.Contains(item, "bad") {
+            downstream <- item
+        }
+    }
+    close(downstream)
+}
+```
+
+==注意：close操作，永远是发送方关闭。==
+
+接收方可以使用如下两种形式进行判断：
+
+方式一：`v, ok := <-c`
+
+方式二：for ... range... 语句，在遍历时，如果channel已经关闭，则会正常遍历数据，遍历完成后，就会退出遍历。
+
+```go
+func worker(id int, c <-chan int) {
+   //方式二，推荐
+   for n := range c {
+      fmt.Printf("Worker %d 接收值：%d \n", id, n)
+   }
+
+   //或者：
+   for {
+      //方式一
+      n, ok := <-c
+      if !ok {
+         break
+      }
+      fmt.Printf("Worker %d 接收值：%d \n", id, n)
+   }
+}
+```
+
+注意：管道的遍历，只能使用for..range，不能使用普通for循环。
+
+如果一个管道一直不关闭，那么使用for..range遍历管道取值时，将在值取完之后出现deadlock错误，将会一直阻塞，直到管道被写入方关闭。
+
+
+
+### nil 管道
+
+对值为nil的通道执行发送或接收操作并不会引发惊恐，但是会导致操作永久阻塞，就好像遇到了一个从来没有接收或者发送过任何值的通道一样。但如果你尝试对值为nil的通道执行close函数，将会引发panic。
+
+初看上去，值为nil的通道似乎没什么用处，但事实恰恰相反。例如，对于一个包含<code>select</code>语句的循环，如果我们不希望程序在每次循环的时候都等待<code>select</code>语句涉及的所有通道，那么可以先将某些通道设置为nil，等到待发送的值准备就绪之后，再为通道变量赋予一个非 nil 值并执行实际的发送操作。
+
+总结：
+
+- 无论收发，nil管道都会被阻塞。
+
+
+
+
+
+
 
 
 
@@ -493,77 +637,19 @@ time.After函数会返回一个channel，该channel会在经过特定时间之�
 
 只包含一个分支的select语句实际上跟直接执行通道操作的效果是一样的。
 
-### nil通道
-
-对值为nil的通道执行发送或接收操作并不会引发惊恐，但是会导致操作永久阻塞，就好像遇到了一个从来没有接收或者发送过任何值的通道一样。但如果你尝试对值为nil的通道执行close函数，将会引发惊恐。
-
-初看上去，值为nil的通道似乎没什么用处，但事实恰恰相反。例如，对于一个包含<code>select</code>语句的循环，如果我们不希望程序在每次循环的时候都等待<code>select</code>语句涉及的所有通道，那么可以先将某些通道设置为nil，等到待发送的值准备就绪之后，再为通道变量赋予一个非 nil 值并执行实际的发送操作。
+select语句可以解决不知道何时关闭管道带来的问题。
 
 
 
-## 关闭通道
-
-Go允许在没有值可供发送的情况下通过close函数关闭通道。
-
-通道被关闭之后将无法写入任何值，如果尝试写入值将会引发惊恐。**尝试读取已被关闭的通道将会获得一个与通道类型对应的零值。**
-
-注意：　当心！如果你在循环里面读取一个已关闭的通道，并且没有检查该通道是否已经关闭，那么这个循环将一直运转下去，并耗费大量的处理器时间。为了避免这种情况发生，请务必对那些可能会被关闭的通道做相应的检查。
-
-执行下述代码获悉通道是否已经关闭：
-
-```go
-v, ok := <-c
-```
-
-如果第二个变量ok的值为false，说明通道已经被关闭。
-
-因为“从通道里面读取值，直到它被关闭为止”这种模式实在是太常用了，所以Go为此提供了一种快捷方式。通过在<code>range</code>语句里面使用通道，程序可以在通道被关闭之前，一直从通道里面读取值。即读取数据时，不用每次都判断通道是否已关闭。
-
-```go
-//形参是两个通道
-func filterGopher(upstream, downstream chan string) {
-    //使用range语句，迭代通道中的值
-    for item := range upstream {
-        if !strings.Contains(item, "bad") {
-            downstream <- item
-        }
-    }
-    close(downstream)
-}
-```
-
-注意：close操作，永远是发送方关闭。
-
-接收方可以使用如下两种形式进行判断：
-
-方式一：`v, ok := <-c`
-
-方式二：for ... range... 语句
-
-```go
-func worker(id int, c <-chan int) {
-   //方式二，推荐
-   for n := range c {
-      fmt.Printf("Worker %d 接收值：%d \n", id, n)
-   }
-
-   //或者：
-   for {
-      //方式一
-      n, ok := <-c
-      if !ok {
-         break
-      }
-      fmt.Printf("Worker %d 接收值：%d \n", id, n)
-   }
-}
-```
 
 
 
-## 并发状态
 
-### 互斥锁（Mutex）
+
+
+## sync包
+
+### sync.Mutex（互斥锁）
 
 goroutine可以通过互斥锁阻止其他goroutine在同一时间进行某些操作。
 
@@ -621,7 +707,9 @@ func (v *Visited) VisitLink(url string) int {
 
 
 
-## sync.Pool
+
+
+### sync.Pool
 
 表示对象缓存。
 
@@ -635,30 +723,30 @@ func (v *Visited) VisitLink(url string) int {
 
 
 
-### sync.Pool 对象获取的机制
+#### sync.Pool 对象获取的机制
 
 - 尝试从私有对象获取，不需要锁，开销最小；
 - 私有对象不存在，尝试从当前 Processor 的共享池获取，需要锁；
 - 如果当前 Processor 共享池也是空的，那么就尝试去其他 Processor 的共享池获取；
 - 如果所有子池都是空的，最后就用用户指定的 New 函数产生一个新的对象返回。
 
-### sync.Pool 对象的放回机制
+#### sync.Pool 对象的放回机制
 
 - 如果私有对象不存在则保存为私有对象；
 - 如果私有对象存在，放入当前 Processor 子池的共享池中。
 
-### sync.Pool 对象的生命周期
+#### sync.Pool 对象的生命周期
 
 - GC会清除 sync.pool 缓存的对象；
 - 对象的缓存有效期为下一次 GC 之前。
 
-### sync.Pool 总结
+#### sync.Pool 总结
 
 - 适合于通过复用，降低复杂对象的创建和GC代价；
 - 协程安全，会有锁的开销；
 - 生命周期受GC影响，不适合于做连接池等，需要自己管理生命周期的资源的池化。
 
-### sync.Pool 示例代码
+#### sync.Pool 示例代码
 
 示例一：
 
@@ -712,7 +800,7 @@ func TestSyncPoolInMultiGroutine(t *testing.T) {
 
 
 
-## sync.WaitGroup
+### sync.WaitGroup
 
 示例：
 
@@ -786,7 +874,7 @@ func main() {
 
 
 
-## sync.Once
+### sync.Once
 
 在多个goroutine中，Do()函数体内的内容，只会被执行一次。
 
@@ -837,48 +925,6 @@ func TestGetSingletonObj(t *testing.T) {
 0x5a2710
 ...
 ```
-
-
-
-## 任意任务完成
-
-```go
-func runTask(id int) string {
-	time.Sleep(time.Millisecond * 10)
-	return fmt.Sprintf("结果来自于 id:%d", id)
-}
-
-func FirstResponse() string {
-	numOfRunner := 10
-    // 为了防止多个协程挂起等待，一定要使用带buffer的channel
-	ch := make(chan string, numOfRunner)
-
-	for i := 0; i < numOfRunner; i++ {
-		go func(i int) {
-			ret := runTask(i)
-			ch <- ret
-		}(i)
-	}
-	return <-ch
-
-}
-
-func TestFirstResponse(t *testing.T) {
-	// 输出系统中的协程数
-	fmt.Println(runtime.NumGoroutine())
-	fmt.Println(FirstResponse())
-	time.Sleep(time.Second)
-	fmt.Println(runtime.NumGoroutine())
-}
-```
-
-
-
-## 所有任务完成
-
-方式一：使用sync.WaitGroup（推荐）
-
-方式二：遍历取值的channel，依次得到每个任务的结果。
 
 
 
@@ -1006,6 +1052,184 @@ func main() {
 	time.Sleep(3 * time.Second)
 	r.Right()
 	time.Sleep(3 * time.Second)
+}
+```
+
+
+
+## 综合示例
+
+
+
+
+
+### 任意任务完成
+
+```go
+func runTask(id int) string {
+	time.Sleep(time.Millisecond * 10)
+	return fmt.Sprintf("结果来自于 id:%d", id)
+}
+
+func FirstResponse() string {
+	numOfRunner := 10
+    // 为了防止多个协程挂起等待，一定要使用带buffer的channel
+	ch := make(chan string, numOfRunner)
+
+	for i := 0; i < numOfRunner; i++ {
+		go func(i int) {
+			ret := runTask(i)
+			ch <- ret
+		}(i)
+	}
+	return <-ch
+
+}
+
+func TestFirstResponse(t *testing.T) {
+	// 输出系统中的协程数
+	fmt.Println(runtime.NumGoroutine())
+	fmt.Println(FirstResponse())
+	time.Sleep(time.Second)
+	fmt.Println(runtime.NumGoroutine())
+}
+```
+
+
+
+### 所有任务完成
+
+方式一：使用sync.WaitGroup（推荐）
+
+方式二：遍历取值的channel，依次得到每个任务的结果。
+
+
+
+### 综合示例代码1
+
+实现两个goroutine同时读和写数据。
+
+备注：下述代码中`exitChan chan bool`建议声明为`exitChan chan struct{}`
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func writeData(intChan chan int) {
+	for i := 1; i <= 50; i++ {
+		// 放入数据
+		intChan <- i
+		fmt.Println("写入数据：", i)
+
+	}
+	// 关闭管道
+	close(intChan)
+}
+
+func readData(intChan chan int, exitChan chan bool) {
+	for {
+		v, ok := <-intChan
+		// 判断是否关闭，如果关闭，OK=false
+		if !ok {
+			break
+
+		}
+		fmt.Printf("读取到数据：%d \n", v)
+	}
+
+	// 读取完成之后，发送任务完成状态
+	exitChan <- true
+	close(exitChan)
+}
+
+func main() {
+	intchan := make(chan int, 10)
+	existchan := make(chan bool, 1)
+
+	go writeData(intchan)
+	go readData(intchan, existchan)
+	<-existchan
+
+}
+```
+
+### 综合示例代码2
+
+使用多个goroutine同时统计素数，例如：计算1~200000之间的素数。
+
+```GO
+package main
+
+import (
+	"fmt"
+)
+
+func putNum(intChan chan int) {
+	for i := 1; i <= 80; i++ {
+		intChan <- i
+	}
+	// 写入完之后要随手关闭管道
+	close(intChan)
+}
+
+func primeNum(chanNum int, intChan chan int, primeChan chan string, exitChan chan bool) {
+
+	for {
+		num, ok := <-intChan
+		if !ok {
+			break
+		}
+		flag := true
+		// 判断是否素数：除了1和自己都不能被整除
+		for i := 2; i < num; i++ {
+			// 不是素数
+			if num%i == 0 {
+				flag = false
+				break
+			}
+		}
+		if flag {
+			primeChan <- fmt.Sprintf("管道%d计算出的素数：%d", chanNum, num)
+		}
+	}
+	fmt.Println("有一个协程取不到数据已退出")
+	exitChan <- true
+	// 此处不能关闭，因为有可能别的协程在写入数据
+
+}
+
+func main() {
+	intChan := make(chan int, 10)
+	primeChan := make(chan string, 10) // 存放结果
+	exitChan := make(chan bool, 4)     // 4个
+
+	// 开启协程，放入数据
+	go putNum(intChan)
+
+	// 开启多个协程，取数并计算是否是素数，并将结果放入到结果管道中
+
+	// 启动4个协程计算素数
+	for i := 1; i <= 4; i++ {
+		go primeNum(i, intChan, primeChan, exitChan)
+	}
+
+	// 检测是否上述4个协程都执行完成，执行完成之后，需要关闭管道
+	go func() {
+		for i := 0; i < 4; i++ {
+			<-exitChan
+		}
+		close(exitChan)
+		close(primeChan)
+	}()
+
+	// 启动一个新的协程用于输出结果
+	// 输出素数
+	for v := range primeChan {
+		fmt.Println(v)
+	}
 }
 ```
 
