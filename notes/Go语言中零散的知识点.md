@@ -68,3 +68,25 @@ fmt.Println(-10 % -3) // 输出：-1
 
 总结：不管分母是否正负，只要分子（被除数）为负数，取模后的结果也为负数；分子（被除数）为正数，取模结果也为正数。
 
+
+
+### 数字转字节数组
+
+如果需要将一个数字转换为字节，或者将字节转换为数字，需要使用到binary包。
+
+例如uint32占用4个字节，如果需要将uint32转换为字节数组：
+
+```go
+var pkgLen uint32 = uint32(len(data))
+var buf [4]byte // 因为uint32数字存储需要4个字节，所以这里使用的是4个长度的字节数组
+binary.BigEndian.PutUint32(buf[0:4], pkgLen)
+```
+
+反过来，将字节数组转换为uint32：
+
+```go
+buf := make([]byte, 1024*4)
+var pkgLen uint32
+pkgLen = binary.BigEndian.Uint32(buf[0:4])
+```
+
