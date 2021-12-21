@@ -1,0 +1,4 @@
+由于mian.go和login.go在同一个包下，因此直接编译main.go运行，会找不到login.go中定义的成员，因此必须将
+它们所在的目录整个编译。
+进入到src目录下，执行：
+go build -o client.exe shangguigu.go_rmdsz/s14_chatroom/client
