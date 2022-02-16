@@ -175,3 +175,13 @@ if !ok {
 }
 ```
 
+
+
+## 其他
+
+如果map的值的类型是struct，那么声明map时，建议使用struct的指针类型作为value。
+
+```go
+m:=map[string]*Student{..}
+```
+

@@ -79,7 +79,7 @@ func run() {
 panic: 引发崩溃
 ```
 
-
+panic错误并不能终止defer的执行。
 
 
 
