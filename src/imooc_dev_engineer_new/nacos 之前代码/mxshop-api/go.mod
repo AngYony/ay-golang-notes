@@ -16,7 +16,7 @@ require (
 	github.com/mojocn/base64Captcha v1.3.5
 	github.com/spf13/viper v1.8.1
 	go.uber.org/zap v1.19.0
-	golang.org/x/image v0.0.0-20210628002857-a66eb6448b8d // indirect
+	golang.org/x/image v0.5.0 // indirect
 	google.golang.org/grpc v1.40.0
 	google.golang.org/protobuf v1.27.1
 
